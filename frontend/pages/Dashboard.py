@@ -40,6 +40,16 @@ def load_riwayat_dari_db():
         pass
     return None
 
+def load_riwayat_assessment(user_id):
+    try:
+        res = requests.get(f"{API_URL}/assessment/riwayat/{user_id}")
+        data = res.json()
+        if data["status"] == "success":
+            return data["data"]
+    except:
+        pass
+    return []
+
 # --- CUSTOM CSS ---
 st.markdown("""
 <style>
@@ -153,7 +163,202 @@ with st.sidebar:
 # --- MAIN CONTENT ---
 messages = st.session_state.chat_history[st.session_state.current_chat]
 
-st.title(f"💬 {st.session_state.current_chat}")
+tab1, tab2 = st.tabs(["💬 Chat AI", "🧠 Tes Minat & Bakat"])
+
+with tab1:
+    st.title(f"💬 {st.session_state.current_chat}")
+with tab2:
+    st.title("🧠 Tryout Jurusan")
+
+    # STEP 1: PILIH JURUSAN
+    jurusan = st.selectbox(
+        "Pilih jurusan yang kamu minati",
+        ["Teknik Informatika", "Psikologi", "Manajemen", "Kedokteran"]
+    )
+
+    # STEP 2: PILIH KAMPUS
+    kampus = st.multiselect(
+        "Pilih 2-3 kampus tujuan",
+        ["UI", "ITB", "UGM", "BINUS", "UNPAD"]
+    )
+
+    # START TRYOUT
+    if not st.session_state.tryout_started:
+        if st.button("🚀 Mulai Tryout"):
+            if not jurusan or len(kampus) < 2:
+                st.warning("Pilih jurusan dan minimal 2 kampus!")
+            else:
+                with st.spinner("Mengambil soal dari AI..."):
+                    res = requests.post(
+                        f"{API_URL}/tryout/start",
+                        json={
+                            "jurusan": jurusan,
+                            "kampus": kampus
+                        }
+                    )
+
+                    data = res.json()
+
+                    if data["status"] == "success":
+                        st.session_state.tryout_started = True
+                        st.session_state.tryout_questions = data["questions"]
+                        st.session_state.selected_kampus = kampus
+                        st.session_state.selected_jurusan = jurusan
+                        st.rerun()
+        # STEP 2: KERJAKAN SOAL
+    if st.session_state.tryout_started:
+        st.subheader("📝 Kerjakan Soal")
+
+        answers = []
+
+        with st.form("form_tryout_submit"):
+            for i, q in enumerate(st.session_state.tryout_questions):
+                st.write(f"{i+1}. {q['question']}")
+                ans = st.radio(
+                    "Pilih jawaban:",
+                    q["options"],
+                    key=f"q_{i}"
+                )
+                answers.append(ans)
+
+            submit_tryout = st.form_submit_button("📊 Submit Jawaban")
+
+        if submit_tryout:
+            with st.spinner("Menghitung hasil..."):
+                res = requests.post(
+                    f"{API_URL}/tryout/submit",
+                    json={
+                        "questions": st.session_state.tryout_questions,
+                        "answers": answers,
+                        "kampus": st.session_state.selected_kampus
+                    }
+                )
+
+                data = res.json()
+
+                if data["status"] == "success":
+                    st.success("🎯 Hasil Tryout")
+
+                    st.markdown(f"## Skor Kamu: **{data['score']}%**")
+
+                    st.markdown("### Peluang Masuk Kampus:")
+
+                    for p in data["peluang"]:
+                        st.write(f"🎓 {p['kampus']}")
+                        st.progress(p["peluang"] / 100)
+                        st.write(f"{p['peluang']}% peluang masuk\n")
+
+                    # RESET BIAR BISA ULANG
+                    if st.button("🔄 Coba Lagi"):
+                        st.session_state.tryout_started = False
+                        st.session_state.tryout_questions = []
+                        st.session_state.tryout_answers = []
+                        st.rerun()
+                        
+    st.title("🧠 Tes Minat & Bakat")
+
+    st.markdown("Isi kuisioner berikut untuk mengetahui jurusan kuliah yang paling cocok untukmu.")
+
+    # 🔥 RIWAYAT DI SINI (SUDAH DIPISAH)
+    st.markdown("## 📊 Riwayat Assessment")
+
+    if st.button("🔄 Refresh Riwayat"):
+        st.rerun()
+
+    riwayat = load_riwayat_assessment(user_id)
+
+    if not riwayat:
+        st.info("Belum ada riwayat assessment.")
+    else:
+        for item in riwayat:
+           with st.expander(f"📄 Assessment #{item['id']}"):
+
+            st.write("**Jawaban User:**")
+            for a in item["answers"]:
+                st.write(f"- {a}")
+
+                st.write("**Hasil AI:**")
+            for i, r in enumerate(item["result"], 1):
+                    st.markdown(f"""
+                    ### {i}. 🎓 {r['jurusan']} ({r['persentase']}%)
+
+                    **Alasan:**  
+                    {r['alasan']}
+
+                    **Prospek:**  
+                    {", ".join(r['prospek'])}
+
+                    **Tips:**  
+                    {r['tips']}
+                    """)
+
+                    st.progress(r['persentase'] / 100)
+                    st.markdown("---")
+
+    st.title("🧠 Tes Minat & Bakat")
+
+    st.markdown("Isi kuisioner berikut untuk mengetahui jurusan kuliah yang paling cocok untukmu.")
+
+    with st.form(key=f"assessment_form_{user_id}"):
+        minat = st.multiselect(
+            "Apa minat kamu?",
+            ["Teknologi", "Bisnis", "Seni", "Kesehatan", "Sosial", "Pendidikan"]
+        )
+
+        hobi = st.multiselect(
+            "Apa hobi kamu?",
+            ["Coding", "Membaca", "Menggambar", "Menulis", "Main Game", "Berorganisasi"]
+        )
+
+        pelajaran = st.multiselect(
+            "Pelajaran favorit?",
+            ["Matematika", "Informatika", "Bahasa", "Biologi", "Ekonomi", "Sejarah"]
+        )
+
+        deskripsi = st.text_area("Ceritakan tentang dirimu (opsional)")
+
+        submit = st.form_submit_button("🔍 Analisis Sekarang")
+
+    if submit:
+        if not minat and not hobi and not pelajaran and not deskripsi:
+            st.warning("Minimal isi salah satu ya!")
+        else:
+            with st.spinner("🤖 AI sedang menganalisis..."):
+                try:
+                    answers = minat + hobi + pelajaran + [deskripsi]
+
+                    res = requests.post(
+                        f"{API_URL}/assessment",
+                        json={"answers": answers}
+                    )
+
+                    data = res.json()
+
+                    if data.get("status") == "success":
+                        st.success("Hasil Analisis 🎯")
+
+                        for i, r in enumerate(data["data"], 1):
+                            st.markdown(f"""
+                            ### {i}. 🎓 {r['jurusan']} ({r['persentase']}% cocok))
+
+                            **Alasan:**
+                            {r['alasan']}
+
+                            **Prospek:**
+                            {", ".join(r['prospek'])}
+
+                            **Tips:**
+                            {r['tips']}
+                             """)
+                            
+                            st.progress(r['persentase'] / 100)
+                            st.markdown("---")
+
+                    else:
+                        st.error("Gagal mendapatkan hasil dari AI.")
+
+                except Exception:
+                    st.error("Tidak dapat terhubung ke server.")
 
 c1, c2, c3 = st.columns(3)
 with c1:
@@ -236,3 +441,18 @@ if st.session_state.is_loading:
     st.session_state.chat_history[st.session_state.current_chat] = messages
     st.session_state.is_loading = False
     st.rerun()
+
+if "tryout_started" not in st.session_state:
+    st.session_state.tryout_started = False
+
+if "tryout_questions" not in st.session_state:
+    st.session_state.tryout_questions = []
+
+if "tryout_answers" not in st.session_state:
+    st.session_state.tryout_answers = []
+
+if "selected_kampus" not in st.session_state:
+    st.session_state.selected_kampus = []
+
+if "selected_jurusan" not in st.session_state:
+    st.session_state.selected_jurusan = ""

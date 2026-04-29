@@ -3,6 +3,8 @@ from app.config.database import engine, Base, check_connection
 from app.models import user, chat, jurusan
 from app.routes.chat_routes import router as chat_router
 from app.routes.auth_routes import router as auth_router  
+from app.routes.assessment_routes import router as assessment_router
+from app.routes.tryout_routes import router as tryout_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,3 +29,6 @@ def root():
         "status": "running",
         "docs": "/docs"
     }
+
+app.include_router(assessment_router, prefix="/api")
+app.include_router(tryout_router, prefix="/api")
