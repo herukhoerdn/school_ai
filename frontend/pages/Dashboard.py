@@ -43,7 +43,10 @@ def load_riwayat_dari_db():
 # --- CUSTOM CSS ---
 st.markdown("""
 <style>
-    .stApp { background-color: #0E1117; }
+    .stApp { background-color: #19284C; }
+    header[data-testid="stHeader"] { background-color: #19284C !important; }
+    .stbottom > div { background-color: #19284C !important; }
+    .stApp h1 { color: #FFFFFF !important; }
     .chat-wrapper { max-width: 800px; margin: auto; padding: 20px; }
     .chat-row { display: flex; margin-bottom: 20px; width: 100%; }
     .chat-user { justify-content: flex-end; }
@@ -67,7 +70,7 @@ st.markdown("""
         border-bottom-left-radius: 2px;
     }
     .stat-card {
-        background-color: #1E2128;
+        background-color: #FFFFFF;
         padding: 15px;
         border-radius: 12px;
         border: 1px solid #30363D;
@@ -79,8 +82,8 @@ st.markdown("""
         transform: translateY(-5px);
     }
     section[data-testid="stSidebar"] {
-        background-color: #161B22;
-        border-right: 1px solid #30363D;
+        background-color: #D3D3D3;
+        border-right: 1px solid #E0E0E0;
     }
 </style>
 """, unsafe_allow_html=True)
