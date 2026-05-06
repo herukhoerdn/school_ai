@@ -17,8 +17,26 @@ if "user" not in st.session_state or st.session_state.user is None:
 user_data = st.session_state.user
 nama_user = user_data.get("nama_lengkap", "Siswa")
 user_id   = user_data.get("id")
+# =========================
+# INIT SESSION STATE TRYOUT
+# =========================
 
+if "tryout_started" not in st.session_state:
+    st.session_state["tryout_started"] = False
+
+if "tryout_questions" not in st.session_state:
+    st.session_state["tryout_questions"] = []
+
+if "tryout_answers" not in st.session_state:
+    st.session_state["tryout_answers"] = []
+
+if "selected_kampus" not in st.session_state:
+    st.session_state["selected_kampus"] = []
+
+if "selected_jurusan" not in st.session_state:
+    st.session_state["selected_jurusan"] = ""
 # --- FUNGSI LOAD RIWAYAT DARI DATABASE ---
+
 def load_riwayat_dari_db():
     try:
         res  = requests.get(f"{API_URL}/chat/riwayat/{user_id}")
@@ -234,7 +252,11 @@ with tab2:
                     }
                 )
 
-                data = res.json()
+                if res.status_code == 200:
+                    data = res.json()
+                else:
+                    st.error(f"Backend error: {res.text}")
+                    st.stop()
 
                 if data["status"] == "success":
                     st.success("🎯 Hasil Tryout")
