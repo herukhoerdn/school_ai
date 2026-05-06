@@ -71,48 +71,125 @@ def load_riwayat_assessment(user_id):
 # --- CUSTOM CSS ---
 st.markdown("""
 <style>
-    .stApp { background-color: #19284C; }
-    header[data-testid="stHeader"] { background-color: #19284C !important; }
-    .stbottom > div { background-color: #19284C !important; }
-    .stApp h1 { color: #FFFFFF !important; }
-    .chat-wrapper { max-width: 800px; margin: auto; padding: 20px; }
-    .chat-row { display: flex; margin-bottom: 20px; width: 100%; }
-    .chat-user { justify-content: flex-end; }
-    .chat-ai { justify-content: flex-start; }
-    .bubble {
-        padding: 14px 18px;
-        border-radius: 18px;
-        font-size: 15px;
-        line-height: 1.5;
-        max-width: 80%;
-    }
-    .user-bubble {
-        background-color: #2D323E;
-        color: #FFFFFF;
-        border-bottom-right-radius: 2px;
-        border: 1px solid #3E4452;
-    }
-    .ai-bubble {
-        background-color: #FFFFFF;
-        color: #1A1A1A;
-        border-bottom-left-radius: 2px;
-    }
-    .stat-card {
-        background-color: #FFFFFF;
-        padding: 15px;
-        border-radius: 12px;
-        border: 1px solid #30363D;
-        text-align: center;
-        transition: 0.3s;
-    }
-    .stat-card:hover {
-        border-color: #58A6FF;
-        transform: translateY(-5px);
-    }
-    section[data-testid="stSidebar"] {
-        background-color: #D3D3D3;
-        border-right: 1px solid #E0E0E0;
-    }
+
+/* =========================
+   BACKGROUND
+========================= */
+
+.stApp {
+    background-color: #19284C;
+}
+
+header[data-testid="stHeader"] {
+    background-color: #19284C !important;
+}
+
+.stbottom > div {
+    background-color: #19284C !important;
+}
+
+/* =========================
+   TEXT UTAMA
+========================= */
+
+h1, h2, h3, h4, h5, h6, p {
+    color: #FFFFFF !important;
+}
+
+/* Label form */
+label {
+    color: #FFFFFF !important;
+    font-weight: 500 !important;
+}
+
+/* =========================
+   INPUT / SELECTBOX
+========================= */
+
+.stSelectbox div[data-baseweb="select"],
+.stMultiSelect div[data-baseweb="select"],
+.stTextArea textarea,
+.stTextInput input {
+    background-color: #FFFFFF !important;
+    border-radius: 10px !important;
+    color: #000000 !important;
+}
+
+/* text selected dropdown */
+.stSelectbox span,
+.stMultiSelect span {
+    color: #000000 !important;
+}
+
+/* placeholder */
+.stSelectbox input,
+.stMultiSelect input {
+    color: #000000 !important;
+}
+
+/* dropdown menu option */
+div[role="listbox"] div {
+    color: #000000 !important;
+    background-color: #FFFFFF !important;
+}
+
+/* =========================
+   BUTTON
+========================= */
+
+/* Tombol utama */
+.stButton > button,
+.stFormSubmitButton > button {
+    background: linear-gradient(135deg, #4F8CFF, #6A5CFF) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: 0.3s ease;
+}
+
+/* Hover effect */
+.stButton > button:hover,
+.stFormSubmitButton > button:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+}
+
+/* Focus effect */
+.stButton > button:focus,
+.stFormSubmitButton > button:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(79,140,255,0.4);
+}
+
+
+/* =========================
+   CARD
+========================= */
+
+.stat-card {
+    background-color: #FFFFFF;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    color: #000000 !important;
+}
+
+/* =========================
+   SIDEBAR
+========================= */
+
+section[data-testid="stSidebar"] {
+    background-color: #D3D3D3;
+    border-right: 1px solid #E0E0E0;
+}
+
+section[data-testid="stSidebar"] * {
+    color: #000000 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -185,96 +262,125 @@ tab1, tab2 = st.tabs(["💬 Chat AI", "🧠 Tes Minat & Bakat"])
 
 with tab1:
     st.title(f"💬 {st.session_state.current_chat}")
-with tab2:
-    st.title("🧠 Tes Minat & Bakat")
+st.subheader("🎯 Tryout Jurusan")
 
-    # =========================
-    # TRYOUT JURUSAN
-    # =========================
-    with st.container():
-        st.subheader("🎯 Tryout Jurusan")
+col1, col2 = st.columns(2)
 
-        col1, col2 = st.columns(2)
+with col1:
+    jurusan = st.selectbox(
+        "Pilih jurusan yang kamu minati",
+        ["Teknik Informatika", "Psikologi", "Manajemen", "Kedokteran"]
+    )
 
-        with col1:
-            jurusan = st.selectbox(
-                "Pilih jurusan yang kamu minati",
-                ["Teknik Informatika", "Psikologi", "Manajemen", "Kedokteran"]
-            )
+with col2:
+    kampus = st.multiselect(
+        "Pilih 2-3 kampus tujuan",
+        ["UI", "ITB", "UGM", "BINUS", "UNPAD"]
+    )
 
-        with col2:
-            kampus = st.multiselect(
-                "Pilih 2-3 kampus tujuan",
-                ["UI", "ITB", "UGM", "BINUS", "UNPAD"]
-            )
+# =========================
+# BUTTON MULAI TRYOUT
+# =========================
 
-        if not st.session_state.tryout_started:
-            if st.button("🚀 Mulai Tryout", key="start_tryout"):
-                if len(kampus) < 2:
-                    st.warning("Pilih minimal 2 kampus.")
-                else:
-                    with st.spinner("Mengambil soal..."):
-                        res = requests.post(
-                            f"{API_URL}/tryout/start",
-                            json={
-                                "jurusan": jurusan,
-                                "kampus": kampus
-                            }
-                        )
+if not st.session_state.tryout_started:
+    if st.button("🚀 Mulai Tryout", key="start_tryout"):
 
-                        data = res.json()
+        if len(kampus) < 2:
+            st.warning("Pilih minimal 2 kampus tujuan.")
 
-                        if data["status"] == "success":
-                            st.session_state.tryout_started = True
-                            st.session_state.tryout_questions = data["questions"]
-                            st.session_state.selected_kampus = kampus
-                            st.session_state.selected_jurusan = jurusan
-                            st.rerun()
+        else:
+            with st.spinner("Mengambil soal tryout..."):
 
-        if st.session_state.tryout_started:
-            st.markdown("### 📝 Kerjakan Soal")
+                res = requests.post(
+                    f"{API_URL}/tryout/start",
+                    json={
+                        "jurusan": jurusan,
+                        "kampus": kampus
+                    }
+                )
 
-            answers = []
-
-            with st.form("form_tryout_submit"):
-                for i, q in enumerate(st.session_state.tryout_questions):
-                    st.markdown(f"**{i+1}. {q['question']}**")
-                    ans = st.radio(
-                        "Pilih jawaban",
-                        q["options"],
-                        key=f"q_{i}"
-                    )
-                    answers.append(ans)
-
-                submit_tryout = st.form_submit_button("📊 Submit Jawaban")
-
-            if submit_tryout:
-                with st.spinner("Menghitung hasil..."):
-                    res = requests.post(
-                        f"{API_URL}/tryout/submit",
-                        json={
-                            "questions": st.session_state.tryout_questions,
-                            "answers": answers,
-                            "kampus": st.session_state.selected_kampus
-                        }
-                    )
-
+                if res.status_code == 200:
                     data = res.json()
 
-                    if data["status"] == "success":
-                        st.success(f"Skor kamu: {data['score']}%")
+                    if data.get("status") == "success":
+                        st.session_state.tryout_started = True
+                        st.session_state.tryout_questions = data["questions"]
+                        st.session_state.selected_kampus = kampus
+                        st.rerun()
 
-                        st.markdown("### Peluang Masuk Kampus")
-                        for p in data["peluang"]:
-                            st.write(f"🎓 {p['kampus']}")
-                            st.progress(p["peluang"] / 100)
-                            st.caption(f"{p['peluang']}% peluang masuk")
+                else:
+                    st.error(f"Gagal mengambil soal: {res.text}")
 
-                        if st.button("🔄 Coba Lagi", key="reset_tryout"):
-                            st.session_state.tryout_started = False
-                            st.session_state.tryout_questions = []
-                            st.session_state.tryout_answers = []
-                            st.rerun()
+
+# =========================
+# TAMPILKAN SOAL TRYOUT
+# =========================
+
+if st.session_state.tryout_started:
+    st.markdown("## 📝 Soal Tryout")
+
+    with st.form("submit_tryout_form"):
+
+        user_answers = []
+
+        for i, q in enumerate(st.session_state.tryout_questions):
+            st.markdown(f"### {i+1}. {q['question']}")
+
+            answer = st.radio(
+                "Pilih jawaban",
+                q["options"],
+                key=f"q_{i}"
+            )
+
+            # Ambil huruf depan: A / B / C / D
+            selected_letter = answer[0]
+            user_answers.append(selected_letter)
+
+        submit = st.form_submit_button("📊 Submit Jawaban")
+
+
+    # =========================
+    # SUBMIT JAWABAN TRYOUT
+    # =========================
+
+    if submit:
+        with st.spinner("Menghitung hasil..."):
+
+            payload = {
+                "user_answers": user_answers,
+                "questions": st.session_state.tryout_questions,
+                "kampus": st.session_state.selected_kampus
+            }
+
+            res = requests.post(
+                f"{API_URL}/tryout/submit",
+                json=payload
+            )
+
+            if res.status_code == 200:
+                data = res.json()
+
+                if data.get("status") == "success":
+                    st.success(f"🎯 Skor kamu: {data['score']}%")
+
+                    st.markdown("## Peluang Masuk Kampus")
+
+                    for p in data["peluang"]:
+                        st.write(f"🎓 {p['kampus']}")
+                        st.progress(p["peluang"] / 100)
+                        st.caption(f"{p['peluang']}% peluang masuk")
+
+                    if st.button("🔄 Coba Lagi", key="reset_tryout"):
+                        st.session_state.tryout_started = False
+                        st.session_state.tryout_questions = []
+                        st.session_state.selected_kampus = []
+                        st.rerun()
+
+                else:
+                    st.error("Gagal menghitung hasil tryout.")
+
+            else:
+                st.error(f"Server Error: {res.text}")
 
     st.markdown("---")
 

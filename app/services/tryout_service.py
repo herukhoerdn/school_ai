@@ -1,6 +1,9 @@
 import random
 from groq import Groq
 import os
+import json
+import re
+
 
 # 🎯 Generate soal berdasarkan jurusan
 def generate_questions(jurusan: str):
@@ -8,13 +11,13 @@ def generate_questions(jurusan: str):
         return [
             {
                 "question": "Apa itu algoritma?",
-                "options": ["Langkah logis", "Hardware", "Database", "UI"],
-                "answer": "Langkah logis"
+                "options": ["A. Langkah logis", "B. Hardware", "C. Database", "D. UI"],
+                "correct_answer": "A"
             },
             {
                 "question": "Bahasa pemrograman?",
-                "options": ["Python", "Photoshop", "Excel", "Word"],
-                "answer": "Python"
+                "options": ["A. Python", "B. Photoshop", "C. Excel", "D. Word"],
+                "correct_answer": "A"
             }
         ]
 
@@ -22,22 +25,29 @@ def generate_questions(jurusan: str):
         return [
             {
                 "question": "Apa itu perilaku manusia?",
-                "options": ["Respon", "Kode", "Data", "Algoritma"],
-                "answer": "Respon"
+                "options": ["A. Respon", "B. Kode", "C. Data", "D. Algoritma"],
+                "correct_answer": "A"
             }
         ]
 
     return []
 
-def calculate_score(questions, user_answers):
-    correct = 0
+def calculate_score(user_answers, questions):
+    total_questions = len(questions)
 
-    for i, q in enumerate(questions):
-        if user_answers[i] == q["answer"]:
-            correct += 1
+    if total_questions == 0:
+        return 0
 
-    score = (correct / len(questions)) * 100
-    return score
+    correct_count = 0
+
+    for i in range(total_questions):
+        if i < len(user_answers):
+            if user_answers[i] == questions[i].correct_answer:
+                correct_count += 1
+
+    score = (correct_count / total_questions) * 100
+
+    return round(score, 2)
 
 def predict_chance(score, kampus_list):
     hasil = []
@@ -66,9 +76,14 @@ Buatkan 5 soal pilihan ganda untuk jurusan {jurusan} dengan tingkat kesulitan {l
 Format JSON:
 [
   {{
-    "question": "...",
-    "options": ["A", "B", "C", "D"],
-    "answer": "..."
+    "question": "Apa yang dimaksud algoritma?",
+    "options": [
+      "A. Sebuah prosedur sistematis",
+      "B. Sebuah perangkat keras",
+      "C. Sebuah database",
+      "D. Sebuah jaringan komputer"
+    ],
+    "correct_answer": "A"
   }}
 ]
 """
@@ -82,10 +97,6 @@ Format JSON:
     text = response.choices[0].message.content
 
     return parse_json(text)
-
-import json
-import re
-
 def parse_json(text):
     try:
         match = re.search(r"\[.*\]", text, re.DOTALL)
