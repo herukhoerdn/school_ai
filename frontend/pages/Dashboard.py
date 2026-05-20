@@ -416,40 +416,227 @@ with tab2:
 
             if data["status"] == "success":
                 st.success(f"Skor: {data['score']}%")
+                score = data["score"]
 
-                for p in data["peluang"]:
-                    st.write(f"{p['kampus']}")
-                    st.progress(p["peluang"]/100)
+            if score <= 30:
+                st.warning("""
+                📚 Jangan menyerah dulu!
 
-                if st.button("🔄 Ulang"):
-                    st.session_state.tryout_started = False
-                    st.session_state.tryout_questions = []
-                    st.rerun()
+                Hasil tryout ini bukan akhir, tapi awal untuk berkembang.
+                Coba tingkatkan belajar sedikit demi sedikit setiap hari.
+
+            💡 Tips:
+- Pelajari kembali konsep dasar
+- Latihan soal rutin
+- Fokus pada materi yang masih sulit
+- Jangan takut salah saat belajar
+
+Semangat! Progress kecil tetap progress 🚀
+""")
+
+            elif score <= 70:
+                st.info("""
+🔥 Hasil kamu sudah cukup bagus!
+
+Kamu sudah memahami beberapa materi penting.
+Tinggal meningkatkan konsistensi dan memperbanyak latihan.
+
+💡 Tips:
+- Kerjakan tryout lebih sering
+- Pelajari pembahasan soal yang salah
+- Latih manajemen waktu saat ujian
+- Fokus pada kelemahan utama kamu
+
+Pertahankan dan terus naikkan skor kamu 💪
+""")
+
+            else:
+                st.success("""
+🏆 Keren banget!
+
+Kemampuan kamu sudah sangat baik dan punya peluang besar masuk kampus impian.
+
+💡 Tips:
+- Pertahankan konsistensi belajar
+- Perbanyak simulasi ujian asli
+- Jangan cepat puas
+- Jaga fokus dan mental saat ujian
+
+Gas terus, calon mahasiswa sukses 🚀🎓
+""")
+
+            for p in data["peluang"]:
+                st.write(f"🎓 {p['kampus']}")
+
+                st.progress(p["peluang"] / 100)
+
+                st.caption(f"📈 Peluang diterima: {p['peluang']}%")
+
+
+# tombol ulang DI LUAR loop
+            if st.button("🔄 Ulang", key="ulang_tryout"):
+                st.session_state.tryout_started = False
+                st.session_state.tryout_questions = []
+                st.rerun()
 
     st.markdown("---")
 
-    # TES MINAT
-    st.subheader("🧠 Tes Minat & Bakat")
+    st.title("🧠 Tes Minat & Bakat")
 
-    with st.form("assessment_form"):
-        minat = st.multiselect("Minat", ["Teknologi","Bisnis","Seni"])
-        hobi = st.multiselect("Hobi", ["Coding","Game","Menulis"])
-        submit = st.form_submit_button("Analisis")
+    st.markdown("""
+Temukan jurusan yang paling cocok berdasarkan minat dan hobimu.
+Pilih beberapa kategori yang paling menggambarkan diri kamu 🚀
+""")
 
-    if submit:
-        res = requests.post(
-            f"{API_URL}/assessment",
-            json={"answers": minat + hobi}
-        )
+# =========================
+# PILIH MINAT & HOBI
+# =========================
 
-        data = res.json()
+    with st.container(border=True):
 
-        if data["status"] == "success":
-            for r in data["data"]:
-                st.write(r["jurusan"])
-                st.progress(r["persentase"]/100)
+        minat = st.multiselect(
+        "🎯 Pilih Minat",
+        [
+            "Teknologi",
+            "Bisnis",
+            "Desain",
+            "Kesehatan",
+            "Psikologi",
+            "Pendidikan",
+            "Komunikasi",
+            "Sains",
+            "Game",
+            "Matematika",
+            "Sosial",
+            "Hukum"
+        ],
+        placeholder="Pilih beberapa minat..."
+    )
 
-st.markdown("<br>", unsafe_allow_html=True)
+    hobi = st.multiselect(
+        "🎮 Pilih Hobi",
+        [
+            "Coding",
+            "Game",
+            "Menggambar",
+            "Menulis",
+            "Membaca",
+            "Public Speaking",
+            "Fotografi",
+            "Editing Video",
+            "Musik",
+            "Olahraga",
+            "Eksperimen",
+            "Bisnis Online"
+        ],
+        placeholder="Pilih beberapa hobi..."
+    )
+
+    analisis = st.button("🔍 Analisis Minat Bakat")
+
+# =========================
+# HASIL ANALISIS
+# =========================
+
+    if analisis:
+
+            hasil = []
+
+    # =================
+    # TEKNIK INFORMATIKA
+    # =================
+            if "Teknologi" in minat or "Coding" in hobi:
+                hasil.append({
+            "jurusan": "Sarjana Teknik Informatika",
+            "persen": 92,
+            "desc": "Cocok untuk kamu yang suka teknologi, logika, coding, dan pengembangan software.",
+            "karier": [
+                "Software Engineer",
+                "Web Developer",
+                "AI Engineer",
+                "Cyber Security"
+            ]
+        })
+
+    # =================
+    # BISNIS DIGITAL
+    # =================
+            if "Bisnis" in minat:
+                hasil.append({
+            "jurusan": "Sarjana Bisnis Digital",
+            "persen": 87,
+            "desc": "Cocok untuk kamu yang tertarik dunia bisnis modern dan startup digital.",
+            "karier": [
+                "Digital Marketer",
+                "Business Analyst",
+                "Entrepreneur",
+                "Content Strategist"
+            ]
+        })
+
+    # =================
+    # GAME DEVELOPMENT
+    # =================
+            if "Game" in hobi:
+                hasil.append({
+            "jurusan": "Sarjana Game Development",
+            "persen": 84,
+            "desc": "Cocok untuk kamu yang suka dunia game, kreativitas, dan teknologi interaktif.",
+            "karier": [
+                "Game Developer",
+                "Game Designer",
+                "3D Artist",
+                "Game Programmer"
+            ]
+        })
+
+    # =================
+    # DESAIN
+    # =================
+            if "Desain" in minat or "Menggambar" in hobi:
+                hasil.append({
+            "jurusan": "Desain Komunikasi Visual",
+            "persen": 80,
+            "desc": "Cocok untuk kamu yang kreatif dan suka visual design.",
+            "karier": [
+                "Graphic Designer",
+                "UI/UX Designer",
+                "Illustrator",
+                "Creative Director"
+            ]
+        })
+
+    # =========================
+    # TAMPILKAN HASIL
+    # =========================
+
+            if hasil:
+
+                st.markdown("## 🎓 Rekomendasi Jurusan")
+
+            for h in hasil:
+
+                st.markdown(f"### {h['jurusan']}")
+
+                st.progress(h["persen"] / 100)
+
+                st.caption(f"📈 Kecocokan: {h['persen']}%")
+
+                st.info(h["desc"])
+
+                st.markdown("#### 💼 Prospek Karier")
+
+            for karier in h["karier"]:
+                st.write(f"✅ {karier}")
+
+            st.markdown("---")
+
+    else:
+        st.warning("""
+Belum ditemukan jurusan yang cocok.
+
+Coba pilih minat dan hobi lebih banyak supaya sistem bisa menganalisis lebih akurat 🚀
+""")
 
 # --- AREA CHAT ---
 
