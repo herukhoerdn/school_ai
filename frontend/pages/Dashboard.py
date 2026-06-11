@@ -39,23 +39,40 @@ if "selected_jurusan" not in st.session_state:
 
 def load_riwayat_dari_db():
     try:
-        res  = requests.get(f"{API_URL}/chat/riwayat/{user_id}")
+
+        print("USER ID =", user_id)
+
+        res = requests.get(
+            f"{API_URL}/chat/riwayat/{user_id}"
+        )
+
         data = res.json()
+
+        print(data)
+
         if data["status"] == "success" and data["data"]:
+
             messages = []
+
             for item in data["data"]:
+
                 messages.append({
                     "role": "user",
                     "content": item["pesan_user"]
                 })
+
                 if item["respons_ai"]:
                     messages.append({
                         "role": "assistant",
                         "content": item["respons_ai"]
                     })
+
             return messages
-    except Exception:
-        pass
+
+    except Exception as e:
+        st.error(str(e))
+        print(e)
+
     return None
 
 def load_riwayat_assessment(user_id):
@@ -192,6 +209,7 @@ section[data-testid="stSidebar"] * {
             
 /* WRAPPER */
 .chat-wrapper {
+    width: 100%;
     max-width: 800px;
     margin: auto;
     padding: 20px;
@@ -216,7 +234,7 @@ section[data-testid="stSidebar"] * {
 .bubble {
     padding: 12px 16px;
     border-radius: 18px;
-    max-width: 70%;
+    max-width: 90%;
     font-size: 15px;
     line-height: 1.5;
     word-wrap: break-word;
@@ -253,13 +271,32 @@ section[data-testid="stSidebar"] * {
 
 # --- SESSION STATE ---
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = {
-        "Percakapan Utama": [
-            {"role": "assistant", "content": f"Halo {nama_user}! Yuk mulai tanya tentang jurusan atau karir kamu 🚀"}
-        ]
-    }
 
-if "current_chat" not in st.session_state:
+    riwayat = load_riwayat_dari_db()
+
+    if riwayat:
+        st.session_state.chat_history = {
+            "Percakapan Utama": riwayat
+        }
+    else:
+        st.session_state.chat_history = {
+            "Percakapan Utama": [
+                {
+                    "role": "assistant",
+                    "content": f"Halo {nama_user}! Yuk mulai tanya tentang jurusan atau karir kamu 🚀"
+                }
+            ]
+        }
+
+if (
+    "current_chat" not in st.session_state
+    or st.session_state.current_chat is None
+):
+    st.session_state.current_chat = "Percakapan Utama"
+if (
+    st.session_state.current_chat is None
+    or st.session_state.current_chat not in st.session_state.chat_history
+):
     st.session_state.current_chat = "Percakapan Utama"
 
 if "is_loading" not in st.session_state:
@@ -294,12 +331,9 @@ with st.sidebar:
 
     st.markdown("---")
 
-    cols_prof = st.columns([1, 4])
-    with cols_prof[0]:
-        st.write("👤")
-    with cols_prof[1]:
-        st.write(f"**{nama_user}**")
-        st.caption(user_data.get("email", ""))
+    st.write("👤")
+    st.write(f"**{nama_user}**")
+    st.caption(user_data.get("email", ""))
 
     if st.button("Logout", use_container_width=True, type="secondary"):
         st.session_state.user         = None
@@ -343,8 +377,18 @@ with tab1:
     user_input = st.chat_input("💬 Tulis pertanyaan kamu tentang jurusan atau karir...")
 
     if user_input and not st.session_state.is_loading:
-        messages.append({"role": "user", "content": user_input})
-        st.session_state.chat_history[st.session_state.current_chat] = messages
+
+        st.session_state.last_user_message = user_input
+
+        messages.append({
+        "role": "user",
+        "content": user_input
+        })
+
+        st.session_state.chat_history[
+        st.session_state.current_chat
+        ] = messages
+
         st.session_state.is_loading = True
         st.rerun()
 
@@ -355,19 +399,26 @@ with tab1:
 with tab2:
     st.subheader("🎯 Tryout Jurusan")
 
-    col1, col2 = st.columns(2)
+    jurusan = st.selectbox(
+    "Pilih jurusan",
+    [
+        "Teknik Informatika",
+        "Psikologi",
+        "Manajemen",
+        "Kedokteran"
+    ] 
+     )
 
-    with col1:
-        jurusan = st.selectbox(
-            "Pilih jurusan",
-            ["Teknik Informatika", "Psikologi", "Manajemen", "Kedokteran"]
-        )
-
-    with col2:
-        kampus = st.multiselect(
-            "Pilih kampus",
-            ["UI", "ITB", "UGM", "BINUS", "UNPAD"]
-        )
+    kampus = st.multiselect(
+    "Pilih kampus",
+    [
+        "UI",
+        "ITB",
+        "UGM",
+        "BINUS",
+        "UNPAD"
+    ]
+    )
 
     # START TRYOUT
     if not st.session_state.tryout_started:
@@ -376,17 +427,16 @@ with tab2:
                 st.warning("Pilih minimal 2 kampus!")
             else:
                 res = requests.post(
-                    f"{API_URL}/tryout/start",
+                f"{API_URL}/tryout/start",
                     json={"jurusan": jurusan, "kampus": kampus}
                 )
-
                 if res.status_code == 200:
                     data = res.json()
                     if data["status"] == "success":
-                        st.session_state.tryout_started = True
-                        st.session_state.tryout_questions = data["questions"]
-                        st.session_state.selected_kampus = kampus
-                        st.rerun()
+                         st.session_state.tryout_started = True
+                         st.session_state.tryout_questions = data["questions"]
+                         st.session_state.selected_kampus = kampus
+                         st.rerun()
 
     # SOAL TRYOUT
     if st.session_state.tryout_started:
@@ -426,44 +476,43 @@ with tab2:
                 Coba tingkatkan belajar sedikit demi sedikit setiap hari.
 
             💡 Tips:
-- Pelajari kembali konsep dasar
-- Latihan soal rutin
-- Fokus pada materi yang masih sulit
-- Jangan takut salah saat belajar
+                - Pelajari kembali konsep dasar
+                - Latihan soal rutin
+                - Fokus pada materi yang masih sulit
+                - Jangan takut salah saat belajar
 
-Semangat! Progress kecil tetap progress 🚀
-""")
+                Semangat! Progress kecil tetap progress 🚀
+                """)
 
             elif score <= 70:
                 st.info("""
-🔥 Hasil kamu sudah cukup bagus!
+                🔥 Hasil kamu sudah cukup bagus!
+                    Kamu sudah memahami beberapa materi penting.
+                    Tinggal meningkatkan konsistensi dan memperbanyak latihan.
 
-Kamu sudah memahami beberapa materi penting.
-Tinggal meningkatkan konsistensi dan memperbanyak latihan.
+                💡 Tips:
+                    - Kerjakan tryout lebih sering
+                    - Pelajari pembahasan soal yang salah
+                    - Latih manajemen waktu saat ujian
+                    - Fokus pada kelemahan utama kamu
 
-💡 Tips:
-- Kerjakan tryout lebih sering
-- Pelajari pembahasan soal yang salah
-- Latih manajemen waktu saat ujian
-- Fokus pada kelemahan utama kamu
-
-Pertahankan dan terus naikkan skor kamu 💪
-""")
+                    Pertahankan dan terus naikkan skor kamu 💪
+                    """)
 
             else:
                 st.success("""
-🏆 Keren banget!
+                    🏆 Keren banget!
 
-Kemampuan kamu sudah sangat baik dan punya peluang besar masuk kampus impian.
+                        Kemampuan kamu sudah sangat baik dan punya peluang besar masuk kampus impian.
 
-💡 Tips:
-- Pertahankan konsistensi belajar
-- Perbanyak simulasi ujian asli
-- Jangan cepat puas
-- Jaga fokus dan mental saat ujian
+                        💡 Tips:
+                            - Pertahankan konsistensi belajar
+                            - Perbanyak simulasi ujian asli
+                            - Jangan cepat puas
+                            - Jaga fokus dan mental saat ujian
 
-Gas terus, calon mahasiswa sukses 🚀🎓
-""")
+                            Gas terus, calon mahasiswa sukses 🚀🎓
+                            """)
 
             for p in data["peluang"]:
                 st.write(f"🎓 {p['kampus']}")
@@ -484,9 +533,9 @@ Gas terus, calon mahasiswa sukses 🚀🎓
     st.title("🧠 Tes Minat & Bakat")
 
     st.markdown("""
-Temukan jurusan yang paling cocok berdasarkan minat dan hobimu.
-Pilih beberapa kategori yang paling menggambarkan diri kamu 🚀
-""")
+        Temukan jurusan yang paling cocok berdasarkan minat dan hobimu.
+        Pilih beberapa kategori yang paling menggambarkan diri kamu 🚀
+        """)
 
 # =========================
 # PILIH MINAT & HOBI
@@ -682,16 +731,27 @@ if st.session_state.is_loading:
 
     # Simpan response AI ke database
     try:
-        requests.post(
+        if "last_user_message" in st.session_state:
+
+            print("AKAN SIMPAN CHAT")
+            print(user_id)
+            print(st.session_state.last_user_message)
+
+            response_save = requests.post(
             f"{API_URL}/chat/simpan",
             json={
-                "user_id"   : user_id,
-                "pesan_user": messages[-2]["content"],
+                "user_id": user_id,
+                "pesan_user": st.session_state.last_user_message,
                 "respons_ai": response
-            }
-        )
-    except Exception:
-        pass
+    }
+)
+
+            print(response_save.status_code)
+            print(response_save.text)
+
+    except Exception as e:
+        st.error(str(e))
+        print(e)
 
     messages.append({"role": "assistant", "content": response})
     st.session_state.chat_history[st.session_state.current_chat] = messages

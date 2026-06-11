@@ -34,7 +34,23 @@ class SimpanChatRequest(BaseModel):
     pesan_user: str
     respons_ai: str
 
+# @router.post("/simpan")
+# def simpan_chat_endpoint(request: SimpanChatRequest, db: Session = Depends(get_db)):
+#     simpan_chat(db, request.user_id, request.pesan_user, request.respons_ai)
+#     return {"status": "success"}
 @router.post("/simpan")
-def simpan_chat_endpoint(request: SimpanChatRequest, db: Session = Depends(get_db)):
-    simpan_chat(db, request.user_id, request.pesan_user, request.respons_ai)
+def simpan_chat_endpoint(
+    request: SimpanChatRequest,
+    db: Session = Depends(get_db)
+):
+    print("===== ENDPOINT SIMPAN DIPANGGIL =====")
+    print(request)
+
+    simpan_chat(
+        db,
+        request.user_id,
+        request.pesan_user,
+        request.respons_ai
+    )
+
     return {"status": "success"}
